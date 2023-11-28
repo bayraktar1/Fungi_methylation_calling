@@ -1,0 +1,25 @@
+
+# sample file
+sample_file: "samples.csv"
+
+# results are stored here
+results: "results"
+
+# Windows size for weighted methylation score calculation
+window_size: 10000
+
+# Minimal coverage for a base
+min_cov: 4
+
+# Tab seperated file containing names of chromosomes and their sizes
+chromosome_sizes: "/home/bayraktar/PycharmProjects/basecalling_scripts/data/genome_data/chrom_size.txt"
+
+# The reference genome
+genome: ""
+
+# Genes BED
+genes: ""
+
+# TE & repeats
+repeats: ""
+

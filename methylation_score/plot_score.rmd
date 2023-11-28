@@ -1,0 +1,166 @@
+---
+title: "Dsp_Dorado_WT_Hp1_Plot"
+output: html_notebook
+---
+
+
+```{r}
+library(karyoploteR)
+library(arrow)
+library(fs)
+```
+
+
+```{r}
+root_dir <- "/home/bayraktar/PycharmProjects/basecalling_scripts/report_results/JR2_genome/weighted_methylation_score/data"
+```
+
+The BED files contain hypo or hyper methylated regions calculated with Methylkit in the script "Hyper_methylated_windows.R".
+```{r}
+subfolder <- "/genome"
+repeats <- toGRanges(path(root_dir,subfolder,"TE.bed"))
+genes <- toGRanges(path(root_dir,subfolder,"genes.bed"))
+
+# methylated_c_dorado_guppy <- toGRanges('/home/bayraktar/PycharmProjects/basecalling_scripts/report_results/JR2_genome/confusion_matrix/sorted_output.bed')
+
+subfolder <- "/hypo_methylated_windows/bisulfate"
+# Wildtype Vs Hp1 knock-out
+wt_hp1_CG <- toGRanges(path(root_dir,subfolder,"wt_hp1_CG.bed"))
+wt_hp1_CHG <- toGRanges(path(root_dir,subfolder,"wt_hp1_CHG.bed"))
+# wt_hp1_CHH <- toGRanges(path(root_dir,subfolder,"wt_hp1_CHH.bed")) # file is empty
+
+subfolder <- "/hypo_methylated_windows/hyper_nanopore"
+# Hp1 Vs Deepsignal-Plant
+hp1_dsp_CG <- toGRanges(path(root_dir,subfolder,"hp1_dsp_CG.bed"))
+hp1_dsp_CHG <- toGRanges(path(root_dir,subfolder,"hp1_dsp_CHG.bed"))
+hp1_dsp_CHH <- toGRanges(path(root_dir,subfolder,"hp1_dsp_CHH.bed"))
+
+# Hp1 VS Dorado
+hp1_dorado_CG <- toGRanges(path(root_dir,subfolder,"hp1_dorado_5mCG.bed"))
+hp1_dorado_m_CG <- toGRanges(path(root_dir,subfolder,"hp1_dorado2model_m_only.bed"))
+hp1_dorado_h_CG <- toGRanges(path(root_dir,subfolder,"hp1_dorado2model_h_only.bed"))
+
+hp1_guppy_CG <- toGRanges(path(root_dir,subfolder,"hp1_guppy_5m_CG.bed"))
+
+hp1_dorado2model_CG.bed <- toGRanges(path(root_dir,subfolder,"hp1_dorado2model_CG.bed"))
+
+
+```
+
+
+The feather files are compressed dataframes that contain windows of x basepairs with a weighted methylation score.
+The feather files are created by the "calculate_weighted_methyl_score.py" script.
+```{r}
+# %>% does not work with the Iranges and Granges package >:(
+subfolder <- "/feather_data/fungi_weighted_meth"
+
+# BISMARK WILDTYPE
+WT_data <- read_feather(path(root_dir,subfolder,'JR2.CX_report_10kb.feather'))
+WT_ranges <- IRanges(start=WT_data$start,end=WT_data$end,score=WT_data$score)
+WT <- GRanges(seqnames=WT_data$Chr,ranges=WT_ranges)
+
+# BISMARK HP1 KNOCK-OUT
+hp1_data <- read_feather(path(root_dir,subfolder,'hp1.CX_report_10kb.feather'))
+hp1_ranges <- IRanges(start=hp1_data$start,end=hp1_data$end,score=hp1_data$score)
+hp1 <- GRanges(seqnames=hp1_data$Chr,ranges=hp1_ranges)
+
+# DEEPSIGNAL-PLANT
+deepsignalplant_data <- read_feather(path(root_dir,subfolder,'deepsignalplant_10kb.feather'))
+deepsignalplant_ranges <- IRanges(start=deepsignalplant_data$start,end=deepsignalplant_data$end,score=deepsignalplant_data$score)
+deepsignalplant <- GRanges(seqnames=deepsignalplant_data$Chr,ranges=deepsignalplant_ranges)
+
+# DORADO 5mCG
+dorado_5mCG_data <- read_feather(path(root_dir, subfolder, 'dorado_5mCG_10kb.feather'))
+dorado_5mCG_ranges <- IRanges(start=dorado_5mCG_data$start, end=dorado_5mCG_data$end, score=dorado_5mCG_data$score)
+dorado_5mCG <- GRanges(seqnames=dorado_5mCG_data$Chr, ranges=dorado_5mCG_ranges)
+
+
+# Guppy 5mCG
+guppy_data <- read_feather(path(root_dir, subfolder, 'guppy_10kb.feather'))
+guppy_ranges <- IRanges(start=guppy_data$start, end=guppy_data$end, score=guppy_data$score)
+guppy <- GRanges(seqnames=guppy_data$Chr, ranges=guppy_ranges)
+
+############################################################################
+# DORADO 5mCG 5hmCG
+dorado_5mCG_5hmCG_data <- read_feather(path(root_dir, subfolder, 'dorado_5mCG_5hmCG_combine_10kb.feather'))
+dorado_5mCG_5hmCG_ranges <- IRanges(start=dorado_5mCG_5hmCG_data$start, end=dorado_5mCG_5hmCG_data$end, score=dorado_5mCG_5hmCG_data$score)
+dorado_5mCG_5hmCG <- GRanges(seqnames=dorado_5mCG_5hmCG_data$Chr, ranges=dorado_5mCG_5hmCG_ranges)
+
+dorado_m_data <- read_feather(path(root_dir, subfolder, 'dorado_5mCG_5hmCG_m_only_10kb.feather'))
+dorado_m_ranges <- IRanges(start=dorado_m_data$start, end=dorado_m_data$end, score=dorado_m_data$score)
+dorado_m <- GRanges(seqnames=dorado_m_data$Chr, ranges=dorado_m_ranges)
+
+
+dorado_h_data <- read_feather(path(root_dir, subfolder, 'dorado_5mCG_5hmCG_h_only_10kb.feather'))
+dorado_h_ranges <- IRanges(start=dorado_h_data$start, end=dorado_h_data$end, score=dorado_h_data$score)
+dorado_h <- GRanges(seqnames=dorado_h_data$Chr, ranges=dorado_h_ranges)
+```
+
+
+Plot data over
+```{r}
+
+minmeth <- min(c(guppy$score, dorado_5mCG$score, deepsignalplant$score, WT$score, hp1$score))
+maxmeth <- max(c(guppy$score, dorado_5mCG$score, deepsignalplant$score, WT$score, hp1$score))
+# chr5 <- toGRanges(data.frame(chr= "8", start= 1, end= 3360604))
+chr5 <- toGRanges(data.frame(chr= "5", start= 1, end= 4189687))
+entire_genome <- toGRanges(data.frame(chr=c("1", "2", "3", "4", "5", "6", "7", "8"), start=rep(1, 8), end=c(9329438, 4270356, 4167548, 4086542, 4189687, 3529570, 3276706, 3360604)))
+
+pp <- getDefaultPlotParams(plot.type = 4)
+pp$leftmargin <- 0.15
+atmargin <- 0.20
+tracks <- 5
+hypo_color <- "grey"
+
+# kp_chr5 <- plotKaryotype(genome=chr5, plot.type=4, plot.params=pp, ideogram.plotter = NULL)
+kp_chr5 <- plotKaryotype(genome=chr5, plot.type=4, plot.params=pp, ylim=c())
+
+# kpAddMainTitle(kp_chr5, "Weighted methylation score in 10kb windows over chromosome 8", cex=2)
+
+# GENES AND TE
+at <- autotrack(current.track = 1, total.tracks = tracks, margin = atmargin)
+kpPlotRegions(kp_chr5, data=reduce(genes), col="#AACCFF", layer.margin = 0.01, border=NA, r0=.1, r1=.2)
+kpPlotRegions(kp_chr5, data=reduce(repeats), col="#FFDCA8", layer.margin = 0.05, borde=NA, r0=.1, r1=.2)
+# kpPlotRegions(kp_chr5, data=methylated_c_dorado_guppy, col="red", pch=16, layer.margin = 0.05, borde=NA, r0=.1, r1=.5)
+
+
+
+# guppy 5mCG
+at <- autotrack(current.track = 2, total.tracks = tracks, margin = atmargin)
+kpPlotRegions(kp_chr5, data=hp1_guppy_CG, col=hypo_color, r0=at$r0, r1=at$r1)
+
+kpLines(kp_chr5, data=hp1, y=hp1$score, col="red", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpLines(kp_chr5, data=guppy, y=guppy$score, col="black", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpAxis(kp_chr5, r0=at$r0, r1=at$r1, ymin = minmeth, ymax = maxmeth, numticks = 2)
+kpAddLabels(kp_chr5, labels="Nanopore Guppy 5mCG", r0=at$r0, r1=at$r1,)
+
+# DORADO 5mCG
+at <- autotrack(current.track = 3, total.tracks = tracks, margin = atmargin)
+kpPlotRegions(kp_chr5, data=hp1_dorado_CG, col=hypo_color, r0=at$r0, r1=at$r1)
+
+kpLines(kp_chr5, data=hp1, y=hp1$score, col="red", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpLines(kp_chr5, data=dorado_5mCG, y=dorado_5mCG$score, col="black", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpAxis(kp_chr5, r0=at$r0, r1=at$r1, ymin = minmeth, ymax = maxmeth, numticks = 2)
+kpAddLabels(kp_chr5, labels="Nanopore Dorado 5mCG", r0=at$r0, r1=at$r1,)
+
+# DEEPSIGNAL-PLANT
+at <- autotrack(current.track = 4, total.tracks = tracks, margin = atmargin)
+kpPlotRegions(kp_chr5, data=hp1_dsp_CG, col=hypo_color, r0=at$r0, r1=at$r1)
+kpPlotRegions(kp_chr5, data=hp1_dsp_CHG, col=hypo_color, r0=at$r0, r1=at$r1)
+kpPlotRegions(kp_chr5, data=hp1_dsp_CHH, col=hypo_color, r0=at$r0, r1=at$r1)
+
+kpLines(kp_chr5, data=hp1, y=hp1$score, col="red", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpLines(kp_chr5, data=deepsignalplant, y=deepsignalplant$score, col="black", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpAxis(kp_chr5, r0=at$r0, r1=at$r1, ymin = minmeth, ymax = maxmeth, numticks = 2)
+kpAddLabels(kp_chr5, labels="Nanopore DeepsignalPlant 5mC", r0=at$r0, r1=at$r1)
+
+# WILDTYPE
+at <- autotrack(current.track = 5, total.tracks = tracks, margin = atmargin)
+kpPlotRegions(kp_chr5, data=wt_hp1_CG, col=hypo_color, r0=at$r0, r1=at$r1)
+kpPlotRegions(kp_chr5, data=wt_hp1_CHG, col=hypo_color, r0=at$r0, r1=at$r1)
+
+kpLines(kp_chr5, data=hp1, y=hp1$score, col="red", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpLines(kp_chr5, data=WT, y=WT$score, col="black", ymin = minmeth, ymax = maxmeth, r0=at$r0, r1=at$r1)
+kpAxis(kp_chr5, r0=at$r0, r1=at$r1, ymin = minmeth, ymax = maxmeth, numticks = 2)
+kpAddLabels(kp_chr5, labels="Bisulfite Bismark 5mC", r0=at$r0, r1=at$r1)
+```

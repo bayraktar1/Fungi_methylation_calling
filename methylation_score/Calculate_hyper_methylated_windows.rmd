@@ -1,0 +1,71 @@
+---
+title: "Hyper methylated windows"
+output: html_notebook
+---
+
+
+```{r}
+library(methylKit)
+library(dbplyr)
+library(fs)
+```
+
+
+We need to compare every file with its cytosine context individually. We set Hp1 as the base and then look for hyper methylated windows to find where there is actually a loss of methylation.
+```{r}
+
+rootdir <- ""
+subfolder <- ""
+
+file_paths <- list(
+  path(rootdir,subfolder,"WT_CG"), path(rootdir,subfolder,"WT_CHG"), path(rootdir,subfolder,"WT_CHH"),
+  path(rootdir,subfolder,"hp1_CG"), path(rootdir,subfolder,"hp1_CHG"), path(rootdir,subfolder,"hp1_CHH"),
+  path(rootdir,subfolder,"dsp_CG"), path(rootdir,subfolder,"dsp_CHG"), path(rootdir,subfolder,"dsp_CHH"),
+  path(rootdir,subfolder,"dorado_5m_CG"),
+  path(rootdir,subfolder,"dorado_5m_5hm_CG")
+)
+sample_ids <- list("WT", "hp1", "deepsignalplant", "dorado_5m", "dorado_5m_5hm")
+
+# Generic format for reading in different sources, need to convert the outputs first
+format_list <- list(fraction=FALSE, chr.col=1, start.col=2, end.col=3, freqC.col=4, coverage.col=5, strand.col=6)
+
+hp1_wt_CG <- methRead(file_paths[c(1,4)], sample.id = sample_ids[c(1,2)], assembly = "verdah", pipeline = "bismarkCytosineReport", treatment = c(1, 0), context = "CpG", mincov = 4)
+hp1_wt_CHG <- methRead(file_paths[c(2,5)], sample.id = sample_ids[c(1,2)], assembly = "verdah", pipeline = "bismarkCytosineReport", treatment = c(1, 0), context = "CHG", mincov = 4)
+hp1_wt_CHH <- methRead(file_paths[c(3,6)], sample.id = sample_ids[c(1,2)], assembly = "verdah", pipeline = "bismarkCytosineReport", treatment = c(1, 0), context = "CHH", mincov = 4)
+
+hp1_dsp_CG <- methRead(file_paths[c(4,7)], sample.id = sample_ids[c(2,3)], assembly = "verdah", pipeline =format_list, treatment = c(0, 1), context = "CpG", mincov = 4)
+hp1_dsp_CHG <- methRead(file_paths[c(5,8)], sample.id = sample_ids[c(2,3)], assembly = "verdah", pipeline =format_list, treatment = c(0, 1), context = "CHG", mincov = 4)
+hp1_dsp_CHH <- methRead(file_paths[c(6,9)], sample.id = sample_ids[c(2,3)], assembly = "verdah", pipeline =format_list, treatment = c(0, 1), context = "CHH", mincov = 4)
+
+hp1_dorado_5m_CG<- methRead(file_paths[c(4, 10)], sample.id = sample_ids[c(1, 4)], assembly = "verdah", pipeline =format_list, treatment = c(0, 1), context = "CpG", mincov = 4)
+hp1_dorado_5m_5hm_CG<- methRead(file_paths[c(4,11)], sample.id = sample_ids[c(1,5)], assembly = "verdah", pipeline =format_list, treatment = c(0, 1), context = "CpG", mincov = 4)
+
+
+# Output files
+data_list <- list("hp1_wt_CG.bed"=hp1_wt_CG, "hp1_wt_CHG.bed"=hp1_wt_CHG, "hp1_wt_CHH.bed"=hp1_wt_CHH,
+                  "hp1_dsp_CG.bed"=hp1_dsp_CG, "hp1_dsp_CHG.bed"=hp1_dsp_CHG, "hp1_dsp_CHH.bed"=hp1_dsp_CHH,
+                  "hp1_dorado_5m_CG.bed"=hp1_dorado_5m_CG,
+                  "hp1_dorado_5m_5hm_CG.bed"=hp1_dorado_5m_5hm_CG)
+```
+
+
+```{r}
+process_methyl_data <- function(data) {
+  tileMethylCounts(data, win.size = 10000, step.size = 10000, cov.bases = 1) %>%
+    unite(destrand = FALSE) %>%
+    calculateDiffMeth() %>%
+    getMethylDiff(difference=1, qvalue=0.01, type="hyper") %>%
+    data.frame() %>%
+    dplyr::select(-qvalue, -pvalue)
+}
+```
+
+
+```{r}
+for (name in names(data_list)) {
+  item <- data_list[[name]]
+  process_methyl_data(item) %>%
+    write.table(name, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+}
+```
+
