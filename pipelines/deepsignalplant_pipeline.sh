@@ -9,10 +9,11 @@ show_help() {
     echo "Usage: $0 -f <fast5_dir> -g <genome> -m <deepsignal-plant model> -m <guppy_model>"
     echo "Options:"
     echo "  -h : Display this help message."
+    echo "  -o : Name of output."
     echo "  -t : Number of threads"
     echo "  -m : Deepsignal-plant modified basecalling model."
     echo "  -s : Guppy basecalling model."
-    echo "  -f : Fast5 directory location."
+    echo "  -f : Fast5 (multi format) directory location."
     echo "  -g : Reference genome."
     echo
     echo "Version 1.0"
@@ -50,7 +51,7 @@ dsp_model=""
 ############################################################
 # Process the input                                        #
 ############################################################
-while getopts "h:s:m:f:g:t:" option; do
+while getopts "ho:s:m:f:g:t:" option; do
    case $option in
       h)
          show_help
@@ -65,6 +66,8 @@ while getopts "h:s:m:f:g:t:" option; do
          threads=$OPTARG;;
       f)
          fast5=$OPTARG;;
+      o) # output
+         output=$OPTARG;;
      \?)
          echo "Error: Invalid option $1"
          exit;;
@@ -74,8 +77,8 @@ done
 ############################################################
 # Check required inputs                                    #
 ############################################################
-if [ -z "$guppy_model" ] ||[ -z "$threads" ] || [ -z "$dsp_model" ] || [ -z "$fast5" ] || [ -z "$genome" ]; then
-    echo "Error: Mandatory options (--threads, --model, --guppy_model --fast5, and --genome) must be specified."
+if [ -z "$guppy_model" ] || [ -z "$threads" ] || [ -z "$dsp_model" ] || [ -z "$fast5" ] || [ -z "$genome" ] || [ -z "$output" ]; then
+    echo "Error: Mandatory options (--threads, --model, --guppy_model --fast5, --genome, --output) must be specified."
     show_help
     exit 1
 fi
@@ -85,8 +88,21 @@ fi
 ############################################################
 # Run                                                      #
 ############################################################
-multi_to_single_fast5 -i "${fast5}" -s single_fast5 -t "${threads}" --recursive
 
+fast5path=$(realpath -e "${fast5}") || exit
+genomepath=$(realpath -e "${genome}") || exit
+dspmodelpath=$(realpath -e "${dsp_model}") || exit
+
+
+echo "Making new directory..."
+mkdir "${output}" || exit
+echo "Moving to new directory..."
+cd "${output}" || exit
+
+echo "Converting fast5 multi to fast5 single..."
+multi_to_single_fast5 -i "${fast5path}" -s single_fast5 -t "${threads}" --recursive
+
+echo "Basecalling with Guppy..."
 guppy_basecaller \
     --input_path single_fast5 \
     --recursive \
@@ -94,10 +110,13 @@ guppy_basecaller \
     --config "${guppy_model}" \
     -x "cuda:0"
 
+echo "Moving to Guppy dir"
 cd basecalled-guppy/pass || exit
+echo "Concatenating passing fastq files"
 cat ./*.fastq > pass.fastq || exit
 cd .. || exit
 
+echo "Annotating raw signal with basecall in Tombo..."
 tombo preprocess annotate_raw_with_fastqs \
 	--fast5-basedir single_fast5 \
 	--fastq-filenames basecalled-guppy/pass/pass.fastq \
@@ -107,20 +126,23 @@ tombo preprocess annotate_raw_with_fastqs \
 	--overwrite \
 	--processes "${threads}"
 
-tombo resquiggle single_fast5 "${genome}" \
+echo "Reqsquiggling with Tombo..."
+tombo resquiggle single_fast5 "${genomepath}" \
 	--processes "${threads}" \
 	--overwrite
 
+echo "Calling methylation with DeepSignalPlant..."
 CUDA_VISIBLE_DEVICES=0 deepsignal_plant call_mods \
 	--input_path single_fast5 \
-	--model_path "${dsp_model}" \
+	--model_path "${dspmodelpath}" \
 	--result_file C_call_mods_size.tsv \
 	--corrected_group RawGenomeCorrected_000 \
 	--motifs C --nproc "${threads}" --nproc_gpu 1 \
 
+echo "Calling frequency with DeepSignalPlant..."
 deepsignal_plant call_freq \
     --input_path C_call_mods_size.tsv \
     --result_file C_call_mods_size.frequency.tsv \
-    --contigs "${genome}" \
+    --contigs "${genomepath}" \
     --nproc "${threads}"
 
