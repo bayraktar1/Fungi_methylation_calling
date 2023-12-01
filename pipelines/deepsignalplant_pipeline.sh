@@ -6,7 +6,7 @@
 # Help                                                     #
 ############################################################
 show_help() {
-    echo "Usage: $0 -f <fast5_dir> -g <genome> -m <deepsignal-plant model> -m <guppy_model>"
+    echo "Usage: $0 -o <name of output dir> -t <N threads> -f <fast5_dir> -g <genome> -m <deepsignal-plant model> -s <guppy_model>"
     echo "Options:"
     echo "  -h : Display this help message."
     echo "  -o : Name of output."
@@ -41,6 +41,7 @@ show_help() {
 ############################################################
 ############################################################
 
+#export HDF5_PLUGIN_PATH=/software/ont-vbz-hdf-plugin-1.0.1-Linux/usr/local/hdf5/lib/plugin
 model=""
 fast5=""
 threads=""
@@ -78,7 +79,7 @@ done
 # Check required inputs                                    #
 ############################################################
 if [ -z "$guppy_model" ] || [ -z "$threads" ] || [ -z "$dsp_model" ] || [ -z "$fast5" ] || [ -z "$genome" ] || [ -z "$output" ]; then
-    echo "Error: Mandatory options (--threads, --model, --guppy_model --fast5, --genome, --output) must be specified."
+    echo "Error: Mandatory options (-m, -g, -s, -f, -o, -t) must be specified."
     show_help
     exit 1
 fi
@@ -110,11 +111,8 @@ guppy_basecaller \
     --config "${guppy_model}" \
     -x "cuda:0"
 
-echo "Moving to Guppy dir"
-cd basecalled-guppy/pass || exit
 echo "Concatenating passing fastq files"
-cat ./*.fastq > pass.fastq || exit
-cd .. || exit
+cat basecalled-guppy/pass/*.fastq > basecalled-guppy/pass/pass.fastq || exit
 
 echo "Annotating raw signal with basecall in Tombo..."
 tombo preprocess annotate_raw_with_fastqs \
