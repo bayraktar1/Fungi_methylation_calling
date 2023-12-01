@@ -30,6 +30,7 @@ show_help() {
     echo "      https://github.com/PengNi/deepsignal-plant"
     echo "  - vbz_compression"
     echo "      https://github.com/nanoporetech/vbz_compression"
+    echo "      Export plugin path if compression still fails: export HDF5_PLUGIN_PATH=ont-vbz-hdf-plugin-1.0.1-Linux/usr/local/hdf5/lib/plugin"
     echo "  - guppy"
     echo "      See the Oxford Nanopore community website on how to obtain a copy of this software"
     echo
@@ -41,8 +42,6 @@ show_help() {
 ############################################################
 ############################################################
 
-#export HDF5_PLUGIN_PATH=/software/ont-vbz-hdf-plugin-1.0.1-Linux/usr/local/hdf5/lib/plugin
-model=""
 fast5=""
 threads=""
 genome=""
