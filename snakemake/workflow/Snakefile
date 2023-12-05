@@ -14,12 +14,12 @@ OUTDIR = Path(config["results"])
 Comma-seperated table with sample information.
 
 Required headers:
-file,source
+file,source,path
 
 file MUST be unique
 '''
 SAMPLE_DATA = pd.read_csv(config["sample_file"], comment="#")
-SAMPLES = SAMPLE_DATA["file"]
+SAMPLES = list(SAMPLE_DATA["file"])
 
 # check if SAMPLES is indeed unique
 if len(SAMPLES) != len(set(SAMPLES)):
@@ -27,56 +27,64 @@ if len(SAMPLES) != len(set(SAMPLES)):
 
 # check if all files exist and add them to dict
 FILES = {}
-for file, source in zip(SAMPLE_DATA["file"], SAMPLE_DATA["source"]):
-    p = Path(file)
+for file, source, location in zip(SAMPLE_DATA["file"], SAMPLE_DATA["source"], SAMPLE_DATA["path"]):
+    p = Path(location)
     if p.exists():
-        FILES[file] = [p.resolve(), source]
+        FILES[file] = [p.name, source, p.resolve()]
     else:
         raise RuntimeError(f"\n *** File {p} not found. Please fix your sample definition file. Cannot continue... exiting.  ***\n")
 
+# print(f'FILES: {FILES}')
+# print(f'SAMPLES: {SAMPLES}')
+# print(f'SAMPLE_DATA {SAMPLE_DATA}')
 
 
 rule all:
     input:
-        key_results = expand( OUTDIR / "{sample}.zip", sample=SAMPLES)
+        # feather = expand(OUTDIR / "01_feather" / "{sample}.feather", sample=SAMPLES),
+        # plot = expand(OUTDIR / "02_plot" / "{sample}.png",sample=SAMPLES),
+        notebook = expand(OUTDIR / "03_stats" / "{sample}.py.ipynb",sample=SAMPLES)
+
+
 
 rule calculate_methylation_score:
     input:
-        tsv ="{sample}"
+        tsv = "data/{sample}"
     output:
-        feather = OUTDIR / "{sample}.feather"
+        feather = OUTDIR / "01_feather" / "{sample}.feather"
     params:
-        source = Path(config["source"]),
-        window_size = Path(config["windows_size"]),
-        chromosome_sizes = Path(config["windows_size"]),
-        min_cov = Path(config["min_cov"]),
+        stem = lambda wildcards: FILES[wildcards.sample][0],
+        source = lambda wildcards: FILES[wildcards.sample][1],
+        window_size = config["window_size"],
+        chromosome_sizes = Path(config["chromosome_sizes"]),
+        min_cov = config["min_cov"],
         out_dir = OUTDIR / "01_feather"
-    conda: ""
+    conda: "envs/calcscore.yaml"
     log: "logs/calculate_methylation_score_{sample}.log"
     shell:
-        '''(
-        python scripts/calculate_weighted_methyl_score.py \
-            --source {params.source} \
-            --file {input.tsv} \ # maybe do something about this flag
-            --chromosome_sizes {params.chromosome_sizes} \
-            --window_size {params.chromosome_sizes} \
-            --output {params.out_dir} / {input.tsv}.feather \
-            --score_calculation fungi_weighted_meth \
-            --min_cov {params.min_cov}
-        ) >{log} 2>&1'''
+        '''(python scripts/calculate_weighted_methyl_score.py \
+         --source {params.source} \
+         --file {input.tsv} \
+         --chromosome_sizes {params.chromosome_sizes} \
+         --window_size {params.window_size} \
+         --output {params.stem}.feather \
+         --directory {params.out_dir} \
+         --score_calculation fungi_weighted_meth \
+         --min_cov {params.min_cov}) >{log} 2>&1'''
 
 
 rule plot_methylation_score:
     input:
         feather = rules.calculate_methylation_score.output.feather
     output:
-        plot = OUTDIR / "{sample}.png"
-    params: 
+        plot = OUTDIR / "02_plot" / "{sample}.png"
+    params:
         genes = Path(config["genes"]),
         repeats= Path(config["repeats"]),
-        chromosomes = Path(config["chromosomes"]),
-        plotname = "{sample}"
-    conda: ""
+        chromosomes = Path(config["chromosome_sizes"]),
+        plotname = "{sample}",
+        outdir = lambda wildcards: OUTDIR / "02_plot" / wildcards.sample
+    conda: "envs/plotr.yaml"
     log: "logs/plot_methylatiion_score_{sample}.log"
     shell:
         r'''(
@@ -85,20 +93,21 @@ rule plot_methylation_score:
          --repeats {params.repeats} \
          --feather {input.feather} \
          --chromosomes {params.chromosomes} \
-         --output  {params.plotname} \
+         --output  {params.outdir} \
          --label {params.plotname}
         ) >{log} 2>&1'''
 
 
 rule stats:
     input:
-        tsv ="{sample}"
+        tsv ="data/{sample}"
     output:
-        processed_nb = OUTDIR / "{sample}.py.ipynb"
+        processed_nb = OUTDIR / "03_stats" / "{sample}.py.ipynb"
     params:
-        source = FILES['{sample}'][1]
-    conda: ""
+        source= lambda wildcards: FILES[wildcards.sample][1],
+    conda: "envs/papermillstats.yaml"
+    log: "logs/stats_{sample}.log"
     shell:
         '''
-        papermill notebooks/{params.source}.py.ipynb {output.processed_nb} -p input_file {input.tsv}
+        (papermill notebooks/{params.source}.py.ipynb {output.processed_nb} -p data_file {input.tsv}) >{log} 2>&1
         '''
