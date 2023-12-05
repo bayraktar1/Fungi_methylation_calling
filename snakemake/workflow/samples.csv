@@ -1,3 +1,2 @@
-file,source
-dorado_methyl_ref_filter_fix.bed,modkit
-C_call_mods_size.frequency.tsv,deepsignalplant
+file,source,path
+dorado_methyl_ref_filter_fix.bed,modkit,data/dorado_methyl_ref_filter_fix.bed
