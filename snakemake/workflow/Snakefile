@@ -42,7 +42,7 @@ for file, source, location in zip(SAMPLE_DATA["file"], SAMPLE_DATA["source"], SA
 rule all:
     input:
         # feather = expand(OUTDIR / "01_feather" / "{sample}.feather", sample=SAMPLES),
-        # plot = expand(OUTDIR / "02_plot" / "{sample}.png",sample=SAMPLES),
+        plot = expand(OUTDIR / "02_plot" / "{sample}.png",sample=SAMPLES),
         notebook = expand(OUTDIR / "03_stats" / "{sample}.py.ipynb",sample=SAMPLES)
 
 
