@@ -9,7 +9,7 @@ The pipeline can be run with: ```snakemake --use-conda --cores N```
 
 Parameter should be set in the ```workflow/config.yaml``` file.
 
-Samples should be set in the ```samples.csv``` file.
+Samples should be set in the ```samples.csv``` file and then be placed into ```snakemake/workflow/data/```
 
 ## Bash pipelines
 There are automated pipelines written in bash for Bismark, DeepSignalPlant, and Dorado. Dependencies must be installed manually to run these.
