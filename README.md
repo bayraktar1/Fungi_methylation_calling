@@ -5,7 +5,7 @@ Scripts and pipelines for methylation calling with ONT
 The snakemake pipeline calculates the weighted methylation score from Modkit (Dorado, Guppy) and DeepSignalPlant outputs and plots them over a genome. Additional stats are calculated in notebooks with papermill. 
 The spaces in the Modkit BED output must be replaced with tabs before passing them to Snakemake. e.g. ```tr ' ' '\t' < modkit.BED```
 
-The pipeline can be runs with: ```snakemake --use-conda --cores N```
+The pipeline can be run with: ```snakemake --use-conda --cores N```
 
 Some parameter should be set in the ```workflow/config.yaml``` file.
 
