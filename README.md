@@ -14,5 +14,5 @@ Samples should be set in the ```samples.csv``` file.
 ## Bash pipelines
 There are automated pipelines written in bash for Bismark, DeepSignalPlant, and Dorado. Dependencies must be installed manually to run these.
 
-## report
+## Report
 Files were added to show how figures or data was generated for the report.
