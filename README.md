@@ -7,7 +7,7 @@ The spaces in the Modkit BED output must be replaced with tabs before passing th
 
 The pipeline can be run with: ```snakemake --use-conda --cores N```
 
-Some parameter should be set in the ```workflow/config.yaml``` file.
+Parameter should be set in the ```workflow/config.yaml``` file.
 
 Samples should be set in the ```samples.csv``` file.
 
