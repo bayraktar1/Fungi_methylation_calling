@@ -1,6 +1,6 @@
 
 # sample file
-sample_file: "/home/bayraktar/PycharmProjects/Fungi_methylation_calling/snakemake/workflow/samples.csv"
+sample_file: "Fungi_methylation_calling/snakemake/workflow/samples.csv"
 
 # results are stored here
 results: "results"
@@ -8,19 +8,19 @@ results: "results"
 # Windows size for weighted methylation score calculation
 window_size: 10000
 
-# Minimal coverage for a base
+# Minimal read coverage
 min_cov: 4
 
 # Tab seperated file containing names of chromosomes and their sizes
-chromosome_sizes: "/home/bayraktar/PycharmProjects/Fungi_methylation_calling/snakemake/test_data/chrom_size.txt"
+chromosome_sizes: "Fungi_methylation_calling/snakemake/workflow/data/chrom_size.txt"
 
 # The reference genome
-genome: "/home/bayraktar/PycharmProjects/Fungi_methylation_calling/snakemake/test_data/verdahJR2.pilon6.fa"
+genome: "Fungi_methylation_calling/snakemake/workflow/data/verdahJR2.pilon6.fa"
 
-# Genes BED
-genes: "/home/bayraktar/PycharmProjects/Fungi_methylation_calling/snakemake/test_data/genes.bed"
+# Gene annotation in BED format
+genes: "Fungi_methylation_calling/snakemake/workflow/data/genes.bed"
 
-# TE & repeats
-repeats: "/home/bayraktar/PycharmProjects/Fungi_methylation_calling/snakemake/test_data/TE.bed"
+# TE & repeat annotation in BED format
+repeats: "Fungi_methylation_calling/snakemake/workflow/data/TE.bed"
 
 
