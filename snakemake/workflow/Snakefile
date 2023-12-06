@@ -48,6 +48,11 @@ rule all:
 
 
 rule calculate_methylation_score:
+    """
+    Divides each chromosome into windows of N kb and calculates the
+    weighted methylation score for each windows. Dataframe with windows
+    get exported to a binary feather file.
+    """
     input:
         tsv = "data/{sample}"
     output:
@@ -74,6 +79,10 @@ rule calculate_methylation_score:
 
 
 rule plot_methylation_score:
+    """
+    Imports feather files into R and plots the weighted methylation
+    score over the genome using KaryoploteR.
+    """
     input:
         feather = rules.calculate_methylation_score.output.feather
     output:
@@ -99,6 +108,10 @@ rule plot_methylation_score:
 
 
 rule stats:
+    """
+    Calculates statistics such as coverage and N modified bases
+    for each sample in a notebook.
+    """
     input:
         tsv ="data/{sample}"
     output:
