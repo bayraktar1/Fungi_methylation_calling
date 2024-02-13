@@ -16,3 +16,5 @@ There are automated pipelines written in bash for Bismark, DeepSignalPlant, and 
 
 ## Report
 Files were added to show how figures or data was generated for the report.
+
+The report can be read [here](https://studenttheses.uu.nl/handle/20.500.12932/45664)
